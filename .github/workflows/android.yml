@@ -7,15 +7,18 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout project
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Java 17
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -23,6 +26,136 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Create Android Project
+        run: |
+          mkdir -p app/src/main/assets
+          mkdir -p app/src/main/java/com/ahatesham/dailyloancalculator
+          mkdir -p app/src/main/res/values
+
+          curl -fL --retry 3 \
+            "https://ashamchoudhary11.github.io/Daily-Loan-Calculator/Daily_Loan_Calculator-4.html" \
+            -o app/src/main/assets/index.html
+
+          cat > settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "DailyLoanCalculator"
+          include(":app")
+          EOF
+
+          cat > build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application' version '8.7.3' apply false
+          }
+          EOF
+
+          cat > gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+          android.useAndroidX=true
+          EOF
+
+          cat > app/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application'
+          }
+          android {
+              namespace 'com.ahatesham.dailyloancalculator'
+              compileSdk 35
+              defaultConfig {
+                  applicationId 'com.ahatesham.dailyloancalculator'
+                  minSdk 23
+                  targetSdk 35
+                  versionCode 1
+                  versionName '1.0'
+              }
+          }
+          EOF
+
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application
+                  android:label="Daily Loan Calculator"
+                  android:theme="@android:style/Theme.Material.Light.NoActionBar"
+                  android:allowBackup="false">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:screenOrientation="portrait">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+          cat > app/src/main/res/values/styles.xml <<'EOF'
+          <resources>
+              <style name="AppTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
+                  <item name="android:colorAccent">#12852b</item>
+                  <item name="android:statusBarColor">#12852b</item>
+                  <item name="android:navigationBarColor">#12852b</item>
+              </style>
+          </resources>
+          EOF
+
+          cat > app/src/main/java/com/ahatesham/dailyloancalculator/MainActivity.java <<'EOF'
+          package com.ahatesham.dailyloancalculator;
+
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.webkit.WebView;
+          import android.webkit.WebSettings;
+          import android.webkit.WebViewClient;
+          import android.graphics.Color;
+
+          public class MainActivity extends Activity {
+              WebView webView;
+
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  getWindow().setStatusBarColor(Color.rgb(18,133,43));
+                  webView = new WebView(this);
+                  webView.setBackgroundColor(Color.WHITE);
+                  WebSettings settings = webView.getSettings();
+                  settings.setJavaScriptEnabled(true);
+                  settings.setDomStorageEnabled(true);
+                  settings.setAllowFileAccess(true);
+                  webView.setWebViewClient(new WebViewClient());
+                  setContentView(webView);
+                  webView.loadUrl("file:///android_asset/index.html");
+              }
+
+              @Override
+              public void onBackPressed() {
+                  if (webView.canGoBack()) webView.goBack();
+                  else super.onBackPressed();
+              }
+          }
+          EOF
 
       - name: Build APK
         run: gradle assembleDebug
