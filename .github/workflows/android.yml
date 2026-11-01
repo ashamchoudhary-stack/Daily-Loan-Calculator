@@ -39,13 +39,31 @@ jobs:
 
       - name: Create Android Project
         run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+
           mkdir -p app/src/main/assets
           mkdir -p app/src/main/java/com/ahatesham/dailyloancalculator
           mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/res/mipmap-mdpi
+          mkdir -p app/src/main/res/mipmap-hdpi
+          mkdir -p app/src/main/res/mipmap-xhdpi
+          mkdir -p app/src/main/res/mipmap-xxhdpi
+          mkdir -p app/src/main/res/mipmap-xxxhdpi
 
           curl -fL --retry 3 \
             "https://ashamchoudhary11.github.io/Daily-Loan-Calculator/Daily_Loan_Calculator-4.html" \
             -o app/src/main/assets/index.html
+
+          curl -fL --retry 3 \
+            "https://raw.githubusercontent.com/ashamchoudhary-stack/Daily-Loan-Calculator/main/1002043925.png" \
+            -o app_icon.png
+
+          convert app_icon.png -resize 48x48 app/src/main/res/mipmap-mdpi/ic_launcher.png
+          convert app_icon.png -resize 72x72 app/src/main/res/mipmap-hdpi/ic_launcher.png
+          convert app_icon.png -resize 96x96 app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          convert app_icon.png -resize 144x144 app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          convert app_icon.png -resize 192x192 app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
           cat > settings.gradle <<'EOF'
           pluginManagement {
@@ -90,8 +108,8 @@ jobs:
                   applicationId 'com.ahatesham.dailyloancalculator'
                   minSdk 23
                   targetSdk 35
-                  versionCode 1
-                  versionName '1.0'
+                  versionCode 2
+                  versionName '2.0'
               }
           }
           EOF
@@ -100,12 +118,16 @@ jobs:
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <application
                   android:label="Daily Loan Calculator"
+                  android:icon="@mipmap/ic_launcher"
+                  android:roundIcon="@mipmap/ic_launcher"
                   android:theme="@android:style/Theme.Material.Light.NoActionBar"
                   android:allowBackup="false">
+
                   <activity
                       android:name=".MainActivity"
                       android:exported="true"
                       android:screenOrientation="portrait">
+
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN"/>
                           <category android:name="android.intent.category.LAUNCHER"/>
