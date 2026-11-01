@@ -31,6 +31,8 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
 
       - name: Install Android SDK
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
@@ -79,9 +81,11 @@ jobs:
           plugins {
               id 'com.android.application'
           }
+
           android {
               namespace 'com.ahatesham.dailyloancalculator'
               compileSdk 35
+
               defaultConfig {
                   applicationId 'com.ahatesham.dailyloancalculator'
                   minSdk 23
